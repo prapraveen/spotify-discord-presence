@@ -12,12 +12,11 @@ export function activityFor(snapshot, lines, linesPerUpdate, now = Date.now()) {
   const window = lyricWindow(lines, progressMs, linesPerUpdate);
   if (!window.lines.length) return { key: `waiting:${snapshot.track.id}`, activity: null };
   const song = `${snapshot.track.name} — ${snapshot.track.artists.join(", ")}`;
-  const lyrics = window.lines.join(" • ");
   const activity = {
     type: 2,
     details: presenceText(song),
     details_url: snapshot.track.spotifyUrl,
-    state: presenceText(lyrics),
+    state: presenceText(window.lines[0]),
     state_url: snapshot.track.spotifyUrl,
     instance: false,
   };
@@ -26,6 +25,7 @@ export function activityFor(snapshot, lines, linesPerUpdate, now = Date.now()) {
       large_image: snapshot.track.albumCoverUrl,
       large_url: snapshot.track.spotifyUrl,
     };
+    if (window.lines[1]) activity.assets.large_text = presenceText(window.lines[1]);
   }
   if (snapshot.isPlaying) {
     activity.timestamps = {
