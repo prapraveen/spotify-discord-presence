@@ -1,23 +1,20 @@
 import { loadConfig } from "./config.js";
-import { SpotifyAuth } from "./spotify-auth.js";
-import { SpotifyClient } from "./spotify.js";
+import { MacSpotifyClient } from "./macos-spotify.js";
 import { LrclibClient } from "./lrclib.js";
 import { DiscordIpcClient } from "./discord-ipc.js";
 import { LyricPresenceApp } from "./app.js";
 
 async function main() {
   const config = loadConfig();
-  const auth = new SpotifyAuth({
-    clientId: config.spotifyClientId,
-    redirectUri: config.spotifyRedirectUri,
-    tokenPath: config.tokenPath,
-  });
+  if (!config.discordClientId) {
+    throw new Error("Missing DISCORD_CLIENT_ID. Copy .env.example to .env and fill it in.");
+  }
   const app = new LyricPresenceApp({
-    spotify: new SpotifyClient(auth),
+    playback: new MacSpotifyClient(),
     lyrics: new LrclibClient({ baseUrl: config.lrclibBaseUrl, userAgent: config.lrclibUserAgent }),
     discord: new DiscordIpcClient(config.discordClientId),
     linesPerUpdate: config.linesPerUpdate,
-    pollIntervalMs: config.spotifyPollIntervalMs,
+    pollIntervalMs: config.playbackPollIntervalMs,
   });
 
   const shutdown = async () => {

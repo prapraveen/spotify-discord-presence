@@ -1,4 +1,4 @@
-import { estimatedProgress } from "./spotify.js";
+import { estimatedProgress } from "./macos-spotify.js";
 import { addBreakMarkers, lyricWindow } from "./lrc.js";
 
 function presenceText(value) {
@@ -17,16 +17,18 @@ export function activityFor(snapshot, lines, linesPerUpdate, now = Date.now()) {
   const activity = {
     type: 2,
     details: presenceText(song),
-    details_url: snapshot.track.spotifyUrl,
     state: presenceText(window.lines[0]),
-    state_url: snapshot.track.spotifyUrl,
     instance: false,
   };
+  if (snapshot.track.spotifyUrl) {
+    activity.details_url = snapshot.track.spotifyUrl;
+    activity.state_url = snapshot.track.spotifyUrl;
+  }
   if (snapshot.track.albumCoverUrl) {
     activity.assets = {
       large_image: snapshot.track.albumCoverUrl,
-      large_url: snapshot.track.spotifyUrl,
     };
+    if (snapshot.track.spotifyUrl) activity.assets.large_url = snapshot.track.spotifyUrl;
     if (window.lines[1]) activity.assets.large_text = presenceText(window.lines[1]);
   }
   if (snapshot.isPlaying) {
@@ -39,8 +41,8 @@ export function activityFor(snapshot, lines, linesPerUpdate, now = Date.now()) {
 }
 
 export class LyricPresenceApp {
-  constructor({ spotify, lyrics, discord, linesPerUpdate, pollIntervalMs }) {
-    this.spotify = spotify;
+  constructor({ playback, lyrics, discord, linesPerUpdate, pollIntervalMs }) {
+    this.playback = playback;
     this.lyrics = lyrics;
     this.discord = discord;
     this.linesPerUpdate = linesPerUpdate;
@@ -64,7 +66,7 @@ export class LyricPresenceApp {
   }
 
   async poll() {
-    const snapshot = await this.spotify.currentlyPlaying();
+    const snapshot = await this.playback.currentlyPlaying();
     this.snapshot = snapshot;
     if (!snapshot) {
       this.trackId = null;

@@ -1,38 +1,46 @@
 # Lyric Presence
 
-Lyric Presence is a local companion app that shows the current track and one or two time-synced lyric lines in your Discord Rich Presence while Spotify plays. The track's album cover is displayed as the activity artwork, with the next lyric used as its caption.
+Lyric Presence is a macOS companion app that shows the current Spotify track and one or two time-synced lyric lines in Discord Rich Presence. It also displays the track's album cover.
 
 It uses:
 
-- Spotify's official Web API for the current track, playback position, pauses, and seeks.
+- Spotify for macOS's built-in scripting interface for local playback state and metadata.
 - [LRCLIB](https://lrclib.net) for community-maintained synchronized LRC lyrics.
 - Discord's local RPC connection to publish Rich Presence to the signed-in desktop client.
 
-This is intentionally different from RhythmType's `syrics`/`SP_DC` approach. It does not read a Spotify browser cookie or call Spotify's private lyrics endpoint.
+It does not use Spotify's Web API, a Spotify developer application, browser cookies, client secrets, or refresh tokens.
 
 ## Important limitation
 
-Discord does not expose an API for applications to continually rewrite a user's custom status. This app creates a **Rich Presence activity**, which appears on your profile/activity card. Discord fixes the first row to the application name and exposes two standard dynamic rows, so Lyric Presence uses the second row for `Song — Artist` and the third for the current lyric. When the client displays the artwork caption as another row, it contains the next lyric. The Discord desktop app must be running, and activity sharing must be enabled.
+Discord does not expose an API for applications to continually rewrite a user's custom status. This app creates a **Rich Presence activity**, which appears on your profile/activity card. Discord fixes the first row to the application name and exposes two standard dynamic rows, so Lyric Presence uses the second row for `Song — Artist` and the third for the current lyric. When the client displays the artwork caption as another row, it contains the next lyric.
+
+The Spotify and Discord desktop applications must be running. Discord activity sharing must be enabled.
 
 ## Requirements
 
+- macOS
 - Node.js 20.6 or newer
-- Spotify Premium (Spotify currently requires Premium for Web API access)
-- The Spotify and Discord desktop applications
-- A Spotify developer application and a Discord developer application
+- Spotify for macOS
+- Discord for macOS
+- A Discord application ID
+
+No Spotify Premium subscription or Spotify developer account is required by Lyric Presence. Spotify itself may impose separate playback requirements for your account.
 
 ## Setup
 
-1. In the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard), create an app with Web API access.
-2. Add `http://127.0.0.1:43821/callback` as an exact redirect URI. Spotify requires the numeric loopback address; do not change it to `localhost`.
-3. In the [Discord Developer Portal](https://discord.com/developers/applications), create an application. Its name is the activity name people will see.
-4. Copy the example configuration and fill in the two public IDs:
+1. In the [Discord Developer Portal](https://discord.com/developers/applications), create an application. Its name and icon are the activity name and branding people will see.
+2. Open **General Information** and copy its **Application ID**. A bot, bot token, client secret, installation, and OAuth configuration are not needed.
+3. Copy the example configuration:
 
    ```sh
    cp .env.example .env
    ```
 
-   `SPOTIFY_CLIENT_ID` is Spotify's Client ID. `DISCORD_CLIENT_ID` is Discord's Application ID. No client secret, Discord token, Spotify cookie, or bot token is needed.
+4. Put the Discord Application ID in `.env`:
+
+   ```dotenv
+   DISCORD_CLIENT_ID=your_discord_application_id
+   ```
 
 5. Start Discord desktop, start Spotify playback, and run:
 
@@ -40,31 +48,33 @@ Discord does not expose an API for applications to continually rewrite a user's 
    npm start
    ```
 
-6. On the first run, open the printed Spotify authorization URL. The refresh token is saved with owner-only permissions in `.data/spotify-tokens.json` and is ignored by git.
+6. On first use, macOS may ask whether Terminal (or your packaged copy of Lyric Presence) may control Spotify. Choose **Allow**. You can change this later under **System Settings → Privacy & Security → Automation**.
 
-Stop with Ctrl-C; the app clears its activity before exiting.
+Stop with Ctrl-C. Discord removes the activity when the local connection closes.
 
 ## Configuration
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `SPOTIFY_CLIENT_ID` | required | Public ID for your Spotify app |
-| `DISCORD_CLIENT_ID` | required | Public ID for your Discord app |
-| `SPOTIFY_REDIRECT_URI` | `http://127.0.0.1:43821/callback` | OAuth callback; must exactly match Spotify's dashboard |
+| `DISCORD_CLIENT_ID` | required | Public ID for the shared Discord application |
 | `LINES_PER_UPDATE` | `2` | Show one or two lines (`1` or `2`) |
-| `SPOTIFY_POLL_INTERVAL_MS` | `3000` | Playback resync interval |
+| `PLAYBACK_POLL_INTERVAL_MS` | `3000` | Local Spotify playback resync interval |
 | `LRCLIB_BASE_URL` | `https://lrclib.net` | Lyrics service base URL; can point to a self-hosted instance |
 | `LRCLIB_USER_AGENT` | app identifier | Identification sent to LRCLIB |
 
+The Discord Application ID is public and can be bundled into a distributed build. Users do not need to create their own Discord application if the distributor supplies this setting.
+
 ## How synchronization works
 
-The app polls Spotify every three seconds, then estimates the position locally between polls. It fetches lyrics once per track and parses the LRC timestamps. With the default two-line setting, the active line is the status row and the immediately following line is the artwork caption; the window normally advances one line at a time. Spotify polls correct drift after a seek, pause, resume, or device handoff.
+Every three seconds, the app asks the local Spotify process for its current track, position, play/pause state, duration, Spotify URL, and artwork URL. It estimates playback position locally between polls. Pauses, seeks, track changes, and local playback handoffs are corrected on the next poll.
+
+Lyrics are fetched once per track. With the default two-line setting, the active line is the status row and the immediately following line is the artwork caption; the window normally advances one line at a time.
 
 Discord permits five activity changes in a rolling 20-second window. Every set and clear operation goes through a shared limiter. Identical updates are ignored, and only when changes arrive faster than Discord permits does the app retain the newest pending presence and skip obsolete lyric updates instead of showing them late.
 
-LRCLIB supplies line timestamps and sometimes an empty timestamped line, but it does not provide reliable start/end timing for every sung phrase. Empty timestamped lines are displayed as `♪`. Lyric Presence also infers instrumental sections when consecutive timestamps are at least eight seconds apart: it allows the prior line five seconds, then displays `♪` until the next lyric. Long intros and outros are handled the same way. Tracks marked entirely instrumental by LRCLIB display `♪` throughout.
+LRCLIB supplies line timestamps and sometimes an empty timestamped line, but it does not provide reliable start/end timing for every sung phrase. Empty timestamped lines are displayed as `♪ ♪`. Lyric Presence also infers instrumental sections when consecutive timestamps are at least eight seconds apart: it allows the prior line five seconds, then displays `♪ ♪` until the next lyric. Long intros and outros are handled the same way. Tracks marked entirely instrumental by LRCLIB display `♪ ♪` throughout.
 
-If LRCLIB's exact metadata lookup misses, the app searches and scores candidates by title, primary artist, album, duration, and availability of synced lyrics. If no synced lyrics exist, it logs that fact and leaves the Rich Presence empty rather than showing incorrectly timed plain lyrics.
+If LRCLIB's exact metadata lookup misses, the app searches and scores candidates by title, primary artist, album, duration, and availability of synced lyrics. If no synced lyrics exist, it logs that fact and leaves Rich Presence empty rather than showing incorrectly timed plain lyrics.
 
 ## Development
 
@@ -77,4 +87,4 @@ The runtime has no third-party npm dependencies.
 
 ## Privacy and content
 
-Lyrics placed in Rich Presence are visible according to your Discord activity privacy settings. LRCLIB receives track metadata (title, artist, album, and duration), while Spotify receives the normal playback-state request. Review the services' terms and the applicable lyric rights before distributing or commercializing the app.
+Lyrics placed in Rich Presence are visible according to your Discord activity privacy settings. LRCLIB receives the current track's title, artist, album, and duration. Playback data is read locally from Spotify and is not sent to a custom server. Review Discord's, Spotify's, and LRCLIB's terms and the applicable lyric rights before distributing or commercializing the app.
