@@ -20,6 +20,10 @@ module.exports = {
       from: "build/trayTemplate.png",
       to: "trayTemplate.png",
     },
+    {
+      from: "build/trayTemplate@2x.png",
+      to: "trayTemplate@2x.png",
+    },
   ],
   asar: true,
   mac: {
