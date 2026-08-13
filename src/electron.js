@@ -1,10 +1,6 @@
 import { app, Menu, nativeImage, shell, Tray } from "electron";
+import path from "node:path";
 import { createLyricPresenceApp } from "./runtime.js";
-
-const TRAY_ICON = `data:image/svg+xml;base64,${Buffer.from(`
-<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
-  <path fill="black" d="M22.5 3.5v17.2a5.4 5.4 0 1 1-2-4.2V8.2l-10 2.2v12.3a5.4 5.4 0 1 1-2-4.2V7.8z"/>
-</svg>`).toString("base64")}`;
 
 let tray;
 let presence;
@@ -98,7 +94,11 @@ if (!app.requestSingleInstanceLock()) {
   });
   app.whenReady().then(() => {
     app.dock?.hide();
-    const icon = nativeImage.createFromDataURL(TRAY_ICON);
+    const trayIconPath = app.isPackaged
+      ? path.join(process.resourcesPath, "trayTemplate.png")
+      : path.join(app.getAppPath(), "build", "trayTemplate.png");
+    const icon = nativeImage.createFromPath(trayIconPath);
+    if (icon.isEmpty()) throw new Error(`Could not load menu-bar icon from ${trayIconPath}`);
     icon.setTemplateImage(true);
     tray = new Tray(icon);
     tray.setTitle("");

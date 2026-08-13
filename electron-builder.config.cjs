@@ -15,6 +15,12 @@ module.exports = {
     "package.json",
     "!src/index.js",
   ],
+  extraResources: [
+    {
+      from: "build/trayTemplate.png",
+      to: "trayTemplate.png",
+    },
+  ],
   asar: true,
   mac: {
     category: "public.app-category.music",
