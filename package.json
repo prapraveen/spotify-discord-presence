@@ -1,0 +1,16 @@
+{
+  "name": "lyric-presence",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Show time-synced lyrics for your current Spotify track in Discord Rich Presence.",
+  "type": "module",
+  "engines": {
+    "node": ">=20.6"
+  },
+  "scripts": {
+    "start": "node --env-file=.env src/index.js",
+    "test": "node --test",
+    "check": "node --check src/index.js"
+  },
+  "license": "MIT"
+}
