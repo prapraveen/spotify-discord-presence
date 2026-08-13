@@ -10,7 +10,7 @@ function positiveInteger(name, fallback, { min = 1, max = Infinity } = {}) {
 
 export function loadConfig() {
   return {
-    discordClientId: process.env.DISCORD_CLIENT_ID?.trim() || "",
+    discordClientId: process.env.DISCORD_CLIENT_ID?.trim() || DEFAULT_DISCORD_CLIENT_ID,
     linesPerUpdate: positiveInteger("LINES_PER_UPDATE", 2, { min: 1, max: 2 }),
     playbackPollIntervalMs: positiveInteger("PLAYBACK_POLL_INTERVAL_MS", 3000, {
       min: 1000,
@@ -22,3 +22,4 @@ export function loadConfig() {
       "LyricPresence/0.1.0 (personal desktop client)",
   };
 }
+export const DEFAULT_DISCORD_CLIENT_ID = "1537570466636763146";

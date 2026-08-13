@@ -41,12 +41,13 @@ export function activityFor(snapshot, lines, linesPerUpdate, now = Date.now()) {
 }
 
 export class LyricPresenceApp {
-  constructor({ playback, lyrics, discord, linesPerUpdate, pollIntervalMs }) {
+  constructor({ playback, lyrics, discord, linesPerUpdate, pollIntervalMs, onStatus = () => {} }) {
     this.playback = playback;
     this.lyrics = lyrics;
     this.discord = discord;
     this.linesPerUpdate = linesPerUpdate;
     this.pollIntervalMs = pollIntervalMs;
+    this.onStatus = onStatus;
     this.snapshot = null;
     this.lines = [];
     this.trackId = null;
@@ -60,6 +61,7 @@ export class LyricPresenceApp {
   async start() {
     const ready = await this.discord.connect();
     console.log(`Connected to Discord as ${ready?.user?.username || "the current user"}.`);
+    this.onStatus({ type: "connected", username: ready?.user?.username || null });
     await this.poll();
     this.pollTimer = setInterval(() => this.runPoll(), this.pollIntervalMs);
     this.tickTimer = setInterval(() => this.updatePresence().catch((error) => this.report(error)), 250);
@@ -72,6 +74,7 @@ export class LyricPresenceApp {
       this.trackId = null;
       this.lines = [];
       await this.clearPresence();
+      this.onStatus({ type: "idle" });
       return;
     }
     if (snapshot.track.id !== this.trackId) {
@@ -79,6 +82,11 @@ export class LyricPresenceApp {
       this.trackId = snapshot.track.id;
       this.lines = [];
       console.log(`Now playing: ${snapshot.track.name} — ${snapshot.track.artists.join(", ")}`);
+      this.onStatus({
+        type: "playing",
+        track: snapshot.track.name,
+        artist: snapshot.track.artists.join(", "),
+      });
       const requestedTrackId = snapshot.track.id;
       const lines = await this.lyrics.lyricsFor(snapshot.track);
       if (this.trackId !== requestedTrackId) return;
@@ -119,7 +127,10 @@ export class LyricPresenceApp {
   }
 
   report(error) {
-    if (!this.stopped) console.error(`[${new Date().toLocaleTimeString()}] ${error.message}`);
+    if (!this.stopped) {
+      console.error(`[${new Date().toLocaleTimeString()}] ${error.message}`);
+      this.onStatus({ type: "error", message: error.message });
+    }
   }
 
   async stop() {
@@ -128,5 +139,6 @@ export class LyricPresenceApp {
     clearInterval(this.pollTimer);
     clearInterval(this.tickTimer);
     this.discord.close();
+    this.onStatus({ type: "stopped" });
   }
 }

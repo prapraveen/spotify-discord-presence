@@ -19,36 +19,46 @@ The Spotify and Discord desktop applications must be running. Discord activity s
 ## Requirements
 
 - macOS
-- Node.js 20.6 or newer
+- Node.js 22.12 or newer when running or building from source
 - Spotify for macOS
 - Discord for macOS
-- A Discord application ID
 
 No Spotify Premium subscription or Spotify developer account is required by Lyric Presence. Spotify itself may impose separate playback requirements for your account.
 
-## Setup
+## Install from a packaged build
 
-1. In the [Discord Developer Portal](https://discord.com/developers/applications), create an application. Its name and icon are the activity name and branding people will see.
-2. Open **General Information** and copy its **Application ID**. A bot, bot token, client secret, installation, and OAuth configuration are not needed.
-3. Copy the example configuration:
+Download the appropriate DMG from the project's releases:
+
+- `arm64` for Apple Silicon Macs (M1 and newer)
+- `x64` for Intel Macs
+
+Drag **Lyric Presence** to Applications and launch it. It runs in the macOS menu bar rather than opening a window. The menu shows the current connection or song, and provides Start, Stop, Launch at Login, Automation Settings, and Quit controls.
+
+The shared Discord Application ID is bundled into the app. Users do not need Spotify or Discord developer accounts, an `.env` file, Node.js, or a terminal.
+
+On first use, macOS may ask whether Lyric Presence may control Spotify. Choose **Allow**. You can change this later under **System Settings → Privacy & Security → Automation**.
+
+## Run from source
+
+1. Install dependencies:
 
    ```sh
-   cp .env.example .env
+   npm install
    ```
 
-4. Put the Discord Application ID in `.env`:
+2. Start Spotify and Discord desktop, then run either the menu-bar app:
 
-   ```dotenv
-   DISCORD_CLIENT_ID=your_discord_application_id
+   ```sh
+   npm run app
    ```
 
-5. Start Discord desktop, start Spotify playback, and run:
+   or the terminal version:
 
    ```sh
    npm start
    ```
 
-6. On first use, macOS may ask whether Terminal (or your packaged copy of Lyric Presence) may control Spotify. Choose **Allow**. You can change this later under **System Settings → Privacy & Security → Automation**.
+The optional `.env.example` settings can be exported through your shell. For the terminal version only, `npm run start:env` loads a local `.env` file explicitly.
 
 Stop with Ctrl-C. Discord removes the activity when the local connection closes.
 
@@ -56,13 +66,13 @@ Stop with Ctrl-C. Discord removes the activity when the local connection closes.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `DISCORD_CLIENT_ID` | required | Public ID for the shared Discord application |
+| `DISCORD_CLIENT_ID` | bundled shared ID | Override the public Discord Application ID for development |
 | `LINES_PER_UPDATE` | `2` | Show one or two lines (`1` or `2`) |
 | `PLAYBACK_POLL_INTERVAL_MS` | `3000` | Local Spotify playback resync interval |
 | `LRCLIB_BASE_URL` | `https://lrclib.net` | Lyrics service base URL; can point to a self-hosted instance |
 | `LRCLIB_USER_AGENT` | app identifier | Identification sent to LRCLIB |
 
-The Discord Application ID is public and can be bundled into a distributed build. Users do not need to create their own Discord application if the distributor supplies this setting.
+The bundled Discord Application ID is public. It is not a bot token or secret.
 
 ## How synchronization works
 
@@ -83,7 +93,18 @@ npm test
 npm run check
 ```
 
-The runtime has no third-party npm dependencies.
+Build local DMG and ZIP artifacts for the current architecture:
+
+```sh
+npm run dist:mac:arm64  # Apple Silicon
+npm run dist:mac:x64    # Intel
+```
+
+Artifacts are written to `release/`. Unsigned builds are suitable for local testing but trigger Gatekeeper warnings when downloaded elsewhere.
+
+For public releases, use an Apple Developer ID Application certificate. The build enables Hardened Runtime, includes the Apple Events entitlement and Spotify usage explanation, and automatically enables notarization when supported Apple credentials are present in the environment. Electron Builder supports App Store Connect API credentials, Apple ID credentials, or a stored `notarytool` keychain profile.
+
+The application runtime has no non-Electron third-party dependencies.
 
 ## Privacy and content
 
