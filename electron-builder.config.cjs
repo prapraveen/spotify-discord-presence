@@ -28,7 +28,6 @@ module.exports = {
   asar: true,
   mac: {
     category: "public.app-category.music",
-    icon: "build/icon.png",
     target: ["dmg", "zip"],
     hardenedRuntime: true,
     entitlements: "build/entitlements.mac.plist",
