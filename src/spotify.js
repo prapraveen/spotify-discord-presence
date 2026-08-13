@@ -33,6 +33,7 @@ export class SpotifyClient {
         name: data.item.name,
         artists: data.item.artists.map((artist) => artist.name),
         album: data.item.album.name,
+        albumCoverUrl: data.item.album.images?.[0]?.url || null,
         durationMs: data.item.duration_ms,
         spotifyUrl: data.item.external_urls.spotify,
       },

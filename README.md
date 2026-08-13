@@ -1,6 +1,6 @@
 # Lyric Presence
 
-Lyric Presence is a local companion app that shows the current one or two time-synced lyric lines in your Discord Rich Presence while Spotify plays.
+Lyric Presence is a local companion app that shows the current track and one or two time-synced lyric lines in your Discord Rich Presence while Spotify plays. The track's album cover is displayed as the activity artwork.
 
 It uses:
 
@@ -12,7 +12,7 @@ This is intentionally different from RhythmType's `syrics`/`SP_DC` approach. It 
 
 ## Important limitation
 
-Discord does not expose an API for applications to continually rewrite a user's custom status. This app creates a **Rich Presence activity**, which appears on your profile/activity card and supplies two text rows for lyrics. The Discord desktop app must be running, and activity sharing must be enabled.
+Discord does not expose an API for applications to continually rewrite a user's custom status. This app creates a **Rich Presence activity**, which appears on your profile/activity card. Discord fixes the first row to the application name and exposes only two dynamic rows, so Lyric Presence uses the second row for `Song — Artist` and the third for the current lyrics. The Discord desktop app must be running, and activity sharing must be enabled.
 
 ## Requirements
 
@@ -58,7 +58,7 @@ Stop with Ctrl-C; the app clears its activity before exiting.
 
 ## How synchronization works
 
-The app polls Spotify every three seconds, then estimates the position locally between polls. It fetches lyrics once per track, parses the LRC timestamps, and sends a Discord update only when the active one- or two-line group changes. Spotify polls correct drift after a seek, pause, resume, or device handoff.
+The app polls Spotify every three seconds, then estimates the position locally between polls. It fetches lyrics once per track, parses the LRC timestamps, and sends a Discord update only when the active one- or two-line group changes. When two lines are configured, Discord's single remaining lyric row displays them separated by `•`. Spotify polls correct drift after a seek, pause, resume, or device handoff.
 
 If LRCLIB's exact metadata lookup misses, the app searches and scores candidates by title, primary artist, album, duration, and availability of synced lyrics. If no synced lyrics exist, it logs that fact and leaves the Rich Presence empty rather than showing incorrectly timed plain lyrics.
 
