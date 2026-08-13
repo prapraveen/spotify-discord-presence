@@ -7,7 +7,6 @@ function normalized(value) {
 export function scoreResult(result, track) {
   let score = 0;
   if (normalized(result.trackName || "") === normalized(track.name)) score += 5;
-  const artists = track.artists.join(" ");
   if (normalized(result.artistName || "").includes(normalized(track.artists[0]))) score += 4;
   if (normalized(result.albumName || "") === normalized(track.album)) score += 2;
   const durationDifference = Math.abs(Number(result.duration || 0) - track.durationMs / 1000);
@@ -54,6 +53,7 @@ export class LrclibClient {
       duration: String(Math.round(track.durationMs / 1000)),
     };
     let result = await this.request("/api/get", parameters);
+    if (result?.instrumental) return [{ startMs: 0, text: "♪" }];
 
     if (!result?.syncedLyrics) {
       const results = await this.request("/api/search", {

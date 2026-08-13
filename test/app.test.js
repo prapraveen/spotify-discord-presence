@@ -21,7 +21,7 @@ test("activityFor keeps song metadata and splits lyrics across the status and im
   const result = activityFor(snapshot, [
     { startMs: 0, text: "first line" },
     { startMs: 2000, text: "second line" },
-  ], 2, 10_600);
+  ], 2, 10_000);
   assert.equal(result.activity.details, "A Song — An Artist");
   assert.equal(result.activity.state, "first line");
   assert.equal(result.activity.type, 2);

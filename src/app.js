@@ -1,5 +1,5 @@
 import { estimatedProgress } from "./spotify.js";
-import { lyricWindow } from "./lrc.js";
+import { addBreakMarkers, lyricWindow } from "./lrc.js";
 
 function presenceText(value) {
   const flattened = value.replace(/[\r\n\t]+/g, " ").replace(/\s+/g, " ").trim();
@@ -78,7 +78,7 @@ export class LyricPresenceApp {
       const requestedTrackId = snapshot.track.id;
       const lines = await this.lyrics.lyricsFor(snapshot.track);
       if (this.trackId !== requestedTrackId) return;
-      this.lines = lines;
+      this.lines = addBreakMarkers(lines, snapshot.track.durationMs);
       if (!this.lines.length) console.warn("No synced lyrics found for this track.");
       else console.log(`Loaded ${this.lines.length} synced lyric lines.`);
     }
