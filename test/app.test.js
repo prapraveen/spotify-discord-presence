@@ -38,6 +38,13 @@ test("activityFor truncates text to Discord's field limit", () => {
   assert.ok(result.activity.state.endsWith("…"));
 });
 
+test("activityFor expands one-character text to Discord's minimum field length", () => {
+  const note = activityFor(snapshot, [{ startMs: 0, text: "♪" }], 1, 10_000);
+  const lyric = activityFor(snapshot, [{ startMs: 0, text: "I" }], 1, 10_000);
+  assert.equal(note.activity.state, "♪ ♪");
+  assert.equal(lyric.activity.state, "I …");
+});
+
 test("activityFor omits assets when Spotify has no cover image", () => {
   const noCover = { ...snapshot, track: { ...snapshot.track, albumCoverUrl: null } };
   const result = activityFor(noCover, [{ startMs: 0, text: "a line" }], 1, 10_000);

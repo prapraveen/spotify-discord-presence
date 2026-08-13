@@ -3,6 +3,8 @@ import { addBreakMarkers, lyricWindow } from "./lrc.js";
 
 function presenceText(value) {
   const flattened = value.replace(/[\r\n\t]+/g, " ").replace(/\s+/g, " ").trim();
+  if (flattened === "♪") return "♪ ♪";
+  if (flattened.length === 1) return `${flattened} …`;
   if (flattened.length <= 128) return flattened;
   return `${flattened.slice(0, 127).trimEnd()}…`;
 }
