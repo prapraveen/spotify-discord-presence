@@ -103,14 +103,17 @@ export class LyricPresenceApp {
     if (!this.snapshot || !this.lines.length) return;
     const { key, activity } = activityFor(this.snapshot, this.lines, this.linesPerUpdate);
     if (!activity || key === this.lastPresenceKey) return;
-    await this.discord.setActivity(activity);
     this.lastPresenceKey = key;
+    this.discord.setActivity(activity).catch((error) => {
+      if (this.lastPresenceKey === key) this.lastPresenceKey = null;
+      this.report(error);
+    });
   }
 
   async clearPresence() {
     if (this.lastPresenceKey === null) return;
-    await this.discord.clearActivity();
     this.lastPresenceKey = null;
+    this.discord.clearActivity().catch((error) => this.report(error));
   }
 
   report(error) {
@@ -122,7 +125,6 @@ export class LyricPresenceApp {
     this.stopped = true;
     clearInterval(this.pollTimer);
     clearInterval(this.tickTimer);
-    try { await this.discord.clearActivity(); } catch {}
     this.discord.close();
   }
 }

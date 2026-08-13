@@ -5,6 +5,8 @@ import crypto from "node:crypto";
 
 const OPCODE_HANDSHAKE = 0;
 const OPCODE_FRAME = 1;
+const ACTIVITY_LIMIT = 5;
+const ACTIVITY_WINDOW_MS = 20_000;
 
 export function encodeFrame(opcode, payload) {
   const body = Buffer.from(JSON.stringify(payload), "utf8");
@@ -12,6 +14,94 @@ export function encodeFrame(opcode, payload) {
   header.writeInt32LE(opcode, 0);
   header.writeInt32LE(body.length, 4);
   return Buffer.concat([header, body]);
+}
+
+export class LatestActivityQueue {
+  constructor(send, {
+    maxUpdates = ACTIVITY_LIMIT,
+    windowMs = ACTIVITY_WINDOW_MS,
+    now = () => Date.now(),
+    schedule = (callback, delay) => setTimeout(callback, delay),
+    cancel = (timer) => clearTimeout(timer),
+  } = {}) {
+    this.send = send;
+    this.maxUpdates = maxUpdates;
+    this.windowMs = windowMs;
+    this.now = now;
+    this.schedule = schedule;
+    this.cancel = cancel;
+    this.sentAt = [];
+    this.queued = null;
+    this.inFlight = null;
+    this.lastSent = null;
+    this.timer = null;
+    this.closed = false;
+  }
+
+  enqueue(activity) {
+    if (this.closed) return Promise.reject(new Error("Discord activity queue is closed."));
+    const serialized = JSON.stringify(activity);
+    if (serialized === this.lastSent && !this.inFlight && !this.queued) {
+      return Promise.resolve({ duplicate: true });
+    }
+    if (serialized === this.queued?.serialized) {
+      return Promise.resolve({ duplicate: true });
+    }
+    if (serialized === this.inFlight?.serialized) {
+      this.queued?.resolve({ superseded: true });
+      this.queued = null;
+      return Promise.resolve({ duplicate: true });
+    }
+
+    if (this.queued) {
+      this.queued.resolve({ superseded: true });
+      this.queued = null;
+    }
+    const result = new Promise((resolve, reject) => {
+      this.queued = { activity, serialized, resolve, reject };
+    });
+    this.drain();
+    return result;
+  }
+
+  drain() {
+    if (this.closed || this.inFlight || !this.queued) return;
+    const now = this.now();
+    this.sentAt = this.sentAt.filter((timestamp) => now - timestamp >= 0 && now - timestamp < this.windowMs);
+    if (this.sentAt.length >= this.maxUpdates) {
+      if (!this.timer) {
+        const delay = Math.max(1, this.sentAt[0] + this.windowMs - now + 1);
+        this.timer = this.schedule(() => {
+          this.timer = null;
+          this.drain();
+        }, delay);
+      }
+      return;
+    }
+
+    const item = this.queued;
+    this.queued = null;
+    this.inFlight = item;
+    this.sentAt.push(now);
+    Promise.resolve(this.send(item.activity)).then(
+      (value) => {
+        this.lastSent = item.serialized;
+        item.resolve(value);
+      },
+      (error) => item.reject(error),
+    ).finally(() => {
+      this.inFlight = null;
+      this.drain();
+    });
+  }
+
+  close() {
+    this.closed = true;
+    if (this.timer) this.cancel(this.timer);
+    this.timer = null;
+    this.queued?.reject(new Error("Discord activity queue closed before sending."));
+    this.queued = null;
+  }
 }
 
 function socketCandidates() {
@@ -55,6 +145,8 @@ export class DiscordIpcClient {
     this.buffer = Buffer.alloc(0);
     this.pending = new Map();
     this.ready = null;
+    this.activityQueue = new LatestActivityQueue((activity) =>
+      this.command("SET_ACTIVITY", { pid: process.pid, activity }));
   }
 
   async connect() {
@@ -106,7 +198,7 @@ export class DiscordIpcClient {
   }
 
   setActivity(activity) {
-    return this.command("SET_ACTIVITY", { pid: process.pid, activity });
+    return this.activityQueue.enqueue(activity);
   }
 
   clearActivity() {
@@ -114,6 +206,7 @@ export class DiscordIpcClient {
   }
 
   close() {
+    this.activityQueue.close();
     this.socket?.destroy();
   }
 }

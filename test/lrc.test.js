@@ -48,12 +48,24 @@ test("activeLineIndex finds the latest elapsed line", () => {
   assert.equal(activeLineIndex(lines, 20_000), 2);
 });
 
-test("lyricWindow shows the active line and following line", () => {
+test("lyricWindow advances in pairs when two lines are configured", () => {
   const lines = [
     { startMs: 0, text: "one" },
     { startMs: 2000, text: "two" },
     { startMs: 4000, text: "three" },
   ];
-  assert.deepEqual(lyricWindow(lines, 2500, 2).lines, ["two", "three"]);
+  assert.deepEqual(lyricWindow(lines, 2500, 2).lines, ["one", "two"]);
   assert.deepEqual(lyricWindow(lines, 4500, 2).lines, ["three"]);
+});
+
+test("lyricWindow gives break markers their own window", () => {
+  const lines = [
+    { startMs: 0, text: "one" },
+    { startMs: 2000, text: "two" },
+    { startMs: 8000, text: "♪" },
+    { startMs: 12_000, text: "three" },
+    { startMs: 14_000, text: "four" },
+  ];
+  assert.deepEqual(lyricWindow(lines, 9000, 2).lines, ["♪", "three"]);
+  assert.deepEqual(lyricWindow(lines, 12_500, 2).lines, ["three", "four"]);
 });

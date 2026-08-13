@@ -71,8 +71,14 @@ export function activeLineIndex(lines, progressMs) {
 export function lyricWindow(lines, progressMs, count = 2) {
   const index = activeLineIndex(lines, progressMs);
   if (index < 0) return { key: "waiting", lines: [] };
+  let windowStart = index;
+  if (count > 1 && lines[index].text !== MUSIC_NOTE) {
+    let segmentStart = index;
+    while (segmentStart > 0 && lines[segmentStart - 1].text !== MUSIC_NOTE) segmentStart -= 1;
+    windowStart = segmentStart + Math.floor((index - segmentStart) / count) * count;
+  }
   return {
-    key: `${index}:${count}`,
-    lines: lines.slice(index, index + count).map((line) => line.text),
+    key: `${windowStart}:${count}`,
+    lines: lines.slice(windowStart, windowStart + count).map((line) => line.text),
   };
 }

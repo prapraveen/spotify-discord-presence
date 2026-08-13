@@ -58,7 +58,9 @@ Stop with Ctrl-C; the app clears its activity before exiting.
 
 ## How synchronization works
 
-The app polls Spotify every three seconds, then estimates the position locally between polls. It fetches lyrics once per track, parses the LRC timestamps, and sends a Discord update only when the active lyric changes. With two lines configured, the current lyric is the status row and the next lyric is the artwork caption. Spotify polls correct drift after a seek, pause, resume, or device handoff.
+The app polls Spotify every three seconds, then estimates the position locally between polls. It fetches lyrics once per track and parses the LRC timestamps. With the default two-line setting, lyrics advance in pairs: the first line is the status row and the second is the artwork caption. Break markers always appear immediately rather than waiting for a pair boundary. Spotify polls correct drift after a seek, pause, resume, or device handoff.
+
+Discord permits five activity changes in a rolling 20-second window. Every set and clear operation goes through a shared limiter. Identical updates are ignored, and when changes arrive faster than Discord permits, only the newest pending presence is retained; obsolete lyric updates are skipped instead of shown late.
 
 LRCLIB supplies line timestamps and sometimes an empty timestamped line, but it does not provide reliable start/end timing for every sung phrase. Empty timestamped lines are displayed as `♪`. Lyric Presence also infers instrumental sections when consecutive timestamps are at least eight seconds apart: it allows the prior line five seconds, then displays `♪` until the next lyric. Long intros and outros are handled the same way. Tracks marked entirely instrumental by LRCLIB display `♪` throughout.
 
