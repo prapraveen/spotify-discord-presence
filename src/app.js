@@ -24,7 +24,6 @@ export function activityFor(snapshot, lines, linesPerUpdate, now = Date.now()) {
   if (snapshot.track.albumCoverUrl) {
     activity.assets = {
       large_image: snapshot.track.albumCoverUrl,
-      large_text: presenceText(snapshot.track.album),
       large_url: snapshot.track.spotifyUrl,
     };
   }

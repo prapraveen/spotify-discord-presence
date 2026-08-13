@@ -27,7 +27,6 @@ test("activityFor keeps song metadata and puts lyrics in the status row", () => 
   assert.equal(result.activity.type, 2);
   assert.deepEqual(result.activity.assets, {
     large_image: "https://i.scdn.co/image/example",
-    large_text: "An Album",
     large_url: "https://open.spotify.com/track/track-id",
   });
 });

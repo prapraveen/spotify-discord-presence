@@ -1,6 +1,6 @@
 # Lyric Presence
 
-Lyric Presence is a local companion app that shows the current track and one or two time-synced lyric lines in your Discord Rich Presence while Spotify plays. The track's album cover is displayed as the activity artwork.
+Lyric Presence is a local companion app that shows the current track and one or two time-synced lyric lines in your Discord Rich Presence while Spotify plays. The track's album cover is displayed as the activity artwork without an album-name caption.
 
 It uses:
 
