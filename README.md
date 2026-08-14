@@ -1,20 +1,16 @@
-# Lyric Presence
+# Enhanced Spotify Discord Presence
 
-Lyric Presence is a macOS companion app that shows the current Spotify track and one or two time-synced lyric lines in Discord Rich Presence. It also displays the track's album cover.
+
+https://github.com/user-attachments/assets/3caea1a0-2304-4740-a094-b1a84f8e42ec
+
+
+Lyric Presence is a background MacOS app that enhances Spotify's integration with Discord's rich presence by showing the current lyric (in sync with the part of the song that you're listening to) in your Discord status!
 
 It uses:
 
-- Spotify for macOS's built-in scripting interface for local playback state and metadata.
-- [LRCLIB](https://lrclib.net) for community-maintained synchronized LRC lyrics.
-- Discord's local RPC connection to publish Rich Presence to the signed-in desktop client.
-
-It does not use Spotify's Web API, a Spotify developer application, browser cookies, client secrets, or refresh tokens.
-
-## Important limitation
-
-Discord does not expose an API for applications to continually rewrite a user's custom status. This app creates a **Rich Presence activity**, which appears on your profile/activity card. Discord fixes the first row to the application name and exposes two standard dynamic rows, so Lyric Presence uses the second row for `Song — Artist` and the third for the current lyric. When the client displays the artwork caption as another row, it contains the next lyric.
-
-The Spotify and Discord desktop applications must be running. Discord activity sharing must be enabled.
+- Spotify for macOS's built-in scripting interface for local playback state and metadata
+- [LRCLIB](https://lrclib.net) for community-maintained synchronized LRC lyrics
+- Discord's local RPC connection to publish Rich Presence to the signed-in desktop client
 
 ## Requirements
 
@@ -22,8 +18,6 @@ The Spotify and Discord desktop applications must be running. Discord activity s
 - Node.js 22.12 or newer when running or building from source
 - Spotify for macOS
 - Discord for macOS
-
-No Spotify Premium subscription or Spotify developer account is required by Lyric Presence. Spotify itself may impose separate playback requirements for your account.
 
 ## Install from a packaged build
 
@@ -34,7 +28,8 @@ Download the appropriate DMG from the project's releases:
 
 Drag **Lyric Presence** to Applications and launch it. It runs in the macOS menu bar rather than opening a window. The menu shows the current connection or song, and provides Start, Stop, Launch at Login, Automation Settings, and Quit controls.
 
-The shared Discord Application ID is bundled into the app. Users do not need Spotify or Discord developer accounts, an `.env` file, Node.js, or a terminal.
+<img width="1058" height="108" alt="image" src="https://github.com/user-attachments/assets/5d23e448-46fd-4b04-9f58-09f3cfda7124" />
+
 
 On first use, macOS may ask whether Lyric Presence may control Spotify. Choose **Allow**. You can change this later under **System Settings → Privacy & Security → Automation**.
 
@@ -72,8 +67,6 @@ Stop with Ctrl-C. Discord removes the activity when the local connection closes.
 | `LRCLIB_BASE_URL` | `https://lrclib.net` | Lyrics service base URL; can point to a self-hosted instance |
 | `LRCLIB_USER_AGENT` | app identifier | Identification sent to LRCLIB |
 
-The bundled Discord Application ID is public. It is not a bot token or secret.
-
 ## How synchronization works
 
 Every three seconds, the app asks the local Spotify process for its current track, position, play/pause state, duration, Spotify URL, and artwork URL. It estimates playback position locally between polls. Pauses, seeks, track changes, and local playback handoffs are corrected on the next poll.
@@ -99,13 +92,3 @@ Build local DMG and ZIP artifacts for the current architecture:
 npm run dist:mac:arm64  # Apple Silicon
 npm run dist:mac:x64    # Intel
 ```
-
-Artifacts are written to `release/`. Unsigned builds are suitable for local testing but trigger Gatekeeper warnings when downloaded elsewhere.
-
-For public releases, use an Apple Developer ID Application certificate. The build enables Hardened Runtime, includes the Apple Events entitlement and Spotify usage explanation, and automatically enables notarization when supported Apple credentials are present in the environment. Electron Builder supports App Store Connect API credentials, Apple ID credentials, or a stored `notarytool` keychain profile.
-
-The application runtime has no non-Electron third-party dependencies.
-
-## Privacy and content
-
-Lyrics placed in Rich Presence are visible according to your Discord activity privacy settings. LRCLIB receives the current track's title, artist, album, and duration. Playback data is read locally from Spotify and is not sent to a custom server. Review Discord's, Spotify's, and LRCLIB's terms and the applicable lyric rights before distributing or commercializing the app.
