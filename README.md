@@ -30,6 +30,7 @@ Drag **Lyric Presence** to Applications and launch it. It runs in the macOS menu
 
 <img width="1058" height="108" alt="image" src="https://github.com/user-attachments/assets/5d23e448-46fd-4b04-9f58-09f3cfda7124" />
 
+The community build is not Apple-notarized. If macOS blocks the first launch, try opening the app once, then go to **System Settings → Privacy & Security**, click **Open Anyway**, and confirm **Open**.
 
 On first use, macOS may ask whether Lyric Presence may control Spotify. Choose **Allow**. You can change this later under **System Settings → Privacy & Security → Automation**.
 
